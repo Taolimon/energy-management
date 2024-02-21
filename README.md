@@ -1,2 +1,2 @@
 # energy-management
-A python-based energy management system to monitor and control a designated room in a chosen building
+A python-based energy management system to and control the energy usage of a designated room in a building
