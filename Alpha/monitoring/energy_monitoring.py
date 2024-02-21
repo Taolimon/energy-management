@@ -1,6 +1,9 @@
 import numbers
 import time
 import math
+import csv
+
+sensorReadingFormat = ["Date", "Time", "Name", "Value"]
 
 class sensorReading():
     def __init__(self, date, time, name, value) -> None:
@@ -35,7 +38,13 @@ def storeReading(energyReading):
     t = time.localtime()
     current_time = time.strftime("%H:%M:%S",t)
     current_date = time.strftime("%z %Y-%m-%d", t)
+    current_month = time.strftime("%M")
     newReading = sensorReading(current_date, current_time, "current_reading", energyReading)
+
+    with open(current_month + "/sensor_readings.csv", "w", newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(sensorReadingFormat)
+        writer.writerow([newReading.date, newReading.time, newReading.name, newReading.value])
 
 def main():
     ListOfReadings = []
