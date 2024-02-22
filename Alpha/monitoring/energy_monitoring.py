@@ -4,6 +4,7 @@ import math
 import csv
 
 sensorReadingFormat = ["Date", "Time", "Name", "Value"]
+usingDirectReadings = False
 
 class lightingEstimate():
     def __init__(self, name, watts) -> None:
@@ -52,10 +53,20 @@ def storeReading(energyReading):
         writer.writerow([newReading.date, newReading.time, newReading.name, newReading.value])
 
 def main():
+    # Variables
     ListOfReadings = []
     energyStream = 0 ### Find a way to get the energy stream
-    current_reading = getEnergyStream(energyStream)
-    storeReading(current_reading)
+    light2x26pl_c_concord = lightingEstimate("2 x 26w pl-c concord round recessed fittings", 26)
+    light2x26Marlin = lightingEstimate("2 x 26w Marlin round surface bulkhead", 26)
+
+    # Check if using readings or estimates
+    if usingDirectReadings:
+        current_reading = getEnergyStream(energyStream)
+    else:
+        pass
+
+    # Store the readings in a file
+    #storeReading(current_reading)
     return
 
 main()
