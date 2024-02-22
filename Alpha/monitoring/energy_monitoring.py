@@ -5,6 +5,11 @@ import csv
 
 sensorReadingFormat = ["Date", "Time", "Name", "Value"]
 
+class lightingEstimate():
+    def __init__(self, name, watts) -> None:
+        self.name = name
+        self.watts = watts
+
 class sensorReading():
     def __init__(self, date, time, name, value) -> None:
         self.date = date
