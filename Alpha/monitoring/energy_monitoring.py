@@ -2,9 +2,15 @@ import numbers
 import time
 import math
 import csv
+#import RPI.GPIO as GPIO
 
 sensorReadingFormat = ["Date", "Time", "Name", "Value"]
 usingDirectReadings = False
+
+# GPIO Global Variables
+GPIO.setmode(GPIO.BCM)
+pir_gpio = 14
+GPIO.setup(pir_gpio, GPIO.IN)
 
 class lightingEstimate():
     def __init__(self, name, watts) -> None:
@@ -27,6 +33,24 @@ class readingsList():
     def addReading(self, reading):
         self.sensorReadings.append(reading)
         
+def prepareSensor():
+    print("Preparing the PIR Module")
+    time.sleep(2)
+    return
+
+def readPIRSensor():
+    try:
+        while True:
+            if (GPIO.input(pir_gpio) == 0):
+                print("No sensor data")
+            elif (GPIO.input(pir_gpio) == 1):
+                print("Motion Detected")
+                time.sleep(2)
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print('interrupted')
+        GPIO.cleanup()
+        return
 
 def getEnergyStream(energyStream):
     if energyStream == None:
@@ -64,6 +88,8 @@ def main():
         current_reading = getEnergyStream(energyStream)
     else:
         pass
+
+    readPIRSensor()
 
     # Store the readings in a file
     #storeReading(current_reading)
