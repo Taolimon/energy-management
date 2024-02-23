@@ -2,7 +2,7 @@ import numbers
 import time
 import math
 import csv
-#import RPI.GPIO as GPIO
+import RPi.GPIO as GPIO
 
 sensorReadingFormat = ["Date", "Time", "Name", "Value"]
 usingDirectReadings = False
