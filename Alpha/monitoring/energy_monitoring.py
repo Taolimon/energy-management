@@ -12,6 +12,12 @@ GPIO.setmode(GPIO.BCM)
 pir_gpio = 14
 GPIO.setup(pir_gpio, GPIO.IN)
 
+class lightState():
+    lightStates = ["OnFromPIR", "OffFromPIR", "OnFromElse", "OffFromElse"]
+
+    def __init__(self, state) -> None:
+        self.currentLightState = state
+
 class lightingEstimate():
     def __init__(self, name, watts) -> None:
         self.name = name
@@ -102,6 +108,7 @@ def main():
     energyStream = 0 ### Find a way to get the energy stream
     light2x26pl_c_concord = lightingEstimate("2 x 26w pl-c concord round recessed fittings", 26)
     light2x26Marlin = lightingEstimate("2 x 26w Marlin round surface bulkhead", 26)
+    stateOfLights = lightState("OffFromElse")
 
     # Check if using readings or estimates
     if usingDirectReadings:
