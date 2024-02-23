@@ -39,16 +39,36 @@ def prepareSensor():
     return
 
 def readPIRSensor():
+    # Add a counter and timer to see if there's multiple movement in quick succession
+    # This is because for every 3 undetected readings, there's a false positive
+    sensor_counter = 0
+
     try:
         while True:
             if (GPIO.input(pir_gpio) == 0):
                 print("No sensor data")
             elif (GPIO.input(pir_gpio) == 1):
                 print("Motion Detected")
-                time.sleep(2)
+                sensor_counter += 1
+                if sensor_counter == 1:
+                    detecting_time = time.time()
+                current_time = time.time()
+                time_difference = current_time - detecting_time
+                #print(current_time)
+                #print(detecting_time)
+                print("time passed since last detection: " + str(time_difference))
+                if (sensor_counter >= 3 and time_difference <= 5):
+                    print("sufficient motion detected.")
+                    detecting_time = time.time()
+                    current_time = time.time()
+                time.sleep(1)
             time.sleep(1)
+        
+            if (sensor_counter >= 3):
+                sensor_counter = 0
+
     except KeyboardInterrupt:
-        print('interrupted')
+        print('\ninterrupted')
         GPIO.cleanup()
         return
 
