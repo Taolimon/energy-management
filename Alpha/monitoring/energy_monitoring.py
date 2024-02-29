@@ -48,6 +48,8 @@ def readPIRSensor():
     # Add a counter and timer to see if there's multiple movement in quick succession
     # This is because for every 3 undetected readings, there's a false positive
     sensor_counter = 0
+    max_counter = 2
+    max_time_difference = 5
 
     try:
         while True:
@@ -63,14 +65,14 @@ def readPIRSensor():
                 #print(current_time)
                 #print(detecting_time)
                 print("time passed since last detection: " + str(time_difference))
-                if (sensor_counter >= 3 and time_difference <= 5):
+                if (sensor_counter >= max_counter and time_difference <= max_time_difference):
                     print("sufficient motion detected.")
                     detecting_time = time.time()
                     current_time = time.time()
                 time.sleep(1)
             time.sleep(1)
         
-            if (sensor_counter >= 3):
+            if (sensor_counter >= max_counter):
                 sensor_counter = 0
 
     except KeyboardInterrupt:
