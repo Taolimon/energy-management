@@ -10,7 +10,9 @@ usingDirectReadings = False
 # GPIO Global Variables
 GPIO.setmode(GPIO.BCM)
 pir_gpio = 14
+digital_light_gpio = 27
 GPIO.setup(pir_gpio, GPIO.IN)
+GPIO.setup(digital_light_gpio, GPIO.IN)
 
 class lightState():
     lightStates = ["OnFromPIR", "OffFromPIR", "OnFromElse", "OffFromElse"]
@@ -38,7 +40,8 @@ class readingsList():
 
     def addReading(self, reading):
         self.sensorReadings.append(reading)
-        
+
+# PIR Sensor        
 def prepareSensor():
     print("Preparing the PIR Module")
     time.sleep(2)
@@ -53,6 +56,9 @@ def readPIRSensor():
 
     try:
         while True:
+
+            checkDLightSensor()
+
             if (GPIO.input(pir_gpio) == 0):
                 print("No sensor data")
             elif (GPIO.input(pir_gpio) == 1):
@@ -79,7 +85,16 @@ def readPIRSensor():
         print('\ninterrupted')
         GPIO.cleanup()
         return
+    
+# Digital Light Sensor
+def checkDLightSensor():
+    if(GPIO.input(digital_light_gpio) == 1):
+        print("Digital Light Sensor: No data")
+    else:
+        print("Digital Light Sensor: Light Detected")
+    return
 
+# Energy Stream
 def getEnergyStream(energyStream):
     if energyStream == None:
         return
