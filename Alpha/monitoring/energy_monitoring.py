@@ -19,12 +19,12 @@ GPIO.setup(digital_light_gpio, GPIO.IN)
 # These variables include the adresses and various light intesnity thresholds
 # Addresses
 # BH1750_ADDR - the adress used by the sensor on the i2c bus
-BH1750_ADDR = "0x23"
-CONTINUOUS_HIGH_RESOLUTION_MODE = "0x10"
+BH1750_ADDR = 0x23
+CONTINUOUS_HIGH_RESOLUTION_MODE = 0x10
 # Light Intensity Thresholds
 # ARTIFICIAL_LIGHT_THRESHOLD - the average light intensity of artificial light
 # EVENING_DAYLIGHT - the average light intensity of evening daylight
-ARTIFICIAL_LIGHT_THRESHOLD = 168.0
+ARTIFICIAL_LIGHT_THRESHOLD = 150.0
 EVENING_DAYLIGHT_ = 3.4
 
 class lightState():
@@ -32,6 +32,12 @@ class lightState():
 
     def __init__(self, state) -> None:
         self.currentLightState = state
+
+    def getState(self):
+        return self.currentLightState
+
+    def changeState(self, new_state):
+        self.currentLightState = new_state
 
 class lightingEstimate():
     def __init__(self, name, watts) -> None:
@@ -54,6 +60,19 @@ class readingsList():
     def addReading(self, reading):
         self.sensorReadings.append(reading)
 
+def changeLightState(lstate, pir_r, light_r):
+    if (pir_r == False):
+        return False
+    elif (light_r >= ARTIFICIAL_LIGHT_THRESHOLD):
+        lstate.changeState("OnFromElse")
+        return False
+    else:
+        if (light_r >= EVENING_DAYLIGHT_):
+            if (lstate.getState() == "OffFromElse" or lstate.getState() == "OffFromPIR"):
+                lstate.changeState("OnFromPIR")
+                return True
+    return False
+
 # PIR Sensor        
 def prepareSensor():
     print("Preparing the PIR Module")
@@ -66,12 +85,11 @@ def readPIRSensor():
     sensor_counter = 0
     max_counter = 2
     max_time_difference = 5
+    starting_time = time.time()
+    max_reading_time = 15
 
     try:
         while True:
-
-            checkDLightSensor()
-
             if (GPIO.input(pir_gpio) == 0):
                 print("No sensor data")
             elif (GPIO.input(pir_gpio) == 1):
@@ -88,11 +106,15 @@ def readPIRSensor():
                     print("sufficient motion detected.")
                     detecting_time = time.time()
                     current_time = time.time()
+                    return True
                 time.sleep(1)
             time.sleep(1)
-        
-            if (sensor_counter >= max_counter):
+
+            ct = time.time()
+            td = ct - starting_time
+            if (sensor_counter >= max_counter or td >= max_reading_time):
                 sensor_counter = 0
+                return False
 
     except KeyboardInterrupt:
         print('\ninterrupted')
@@ -111,7 +133,7 @@ def checkDLightSensor():
 def checkBH1750(bus):
     data = bus.read_i2c_block_data(BH1750_ADDR, CONTINUOUS_HIGH_RESOLUTION_MODE)
     light_intensity = (data[1] + (256 * data[0])) / 1.2
-    print("Light_Intensity: " + light_intensity)
+    print("Light_Intensity: ", light_intensity)
     return light_intensity
 
 # General Sensors
@@ -150,8 +172,13 @@ def main():
     energyStream = 0 ### Find a way to get the energy stream
     light2x26pl_c_concord = lightingEstimate("2 x 26w pl-c concord round recessed fittings", 26)
     light2x26Marlin = lightingEstimate("2 x 26w Marlin round surface bulkhead", 26)
-    stateOfLights = lightState("OffFromElse")
     bus = smbus.SMBus(1)
+    bus.write_byte(BH1750_ADDR, CONTINUOUS_HIGH_RESOLUTION_MODE)
+
+    if (checkBH1750(bus) >= ARTIFICIAL_LIGHT_THRESHOLD):
+        stateOfLights = lightState("OnFromElse")
+    else:
+        stateOfLights = lightState("OffFromElse")
 
     # Check if using readings or estimates
     if usingDirectReadings:
@@ -159,7 +186,17 @@ def main():
     else:
         pass
 
-    readPIRSensor()
+    while True:
+        pir_reading = readPIRSensor()
+        bh1750_reading = checkBH1750(bus)
+
+        print("pir_reading: " + str(pir_reading))
+        print("bh1750_reading: " + str(bh1750_reading))
+        time.sleep(2)
+        print("\n")
+
+        stateChangeStatus = changeLightState(stateOfLights, pir_reading, bh1750_reading)
+        print("Light State: ", stateOfLights.getState())
 
     # Store the readings in a file
     #storeReading(current_reading)
