@@ -3,6 +3,7 @@ import time
 import math
 import csv
 import RPi.GPIO as GPIO
+import smbus
 
 sensorReadingFormat = ["Date", "Time", "Name", "Value"]
 usingDirectReadings = False
@@ -13,6 +14,18 @@ pir_gpio = 14
 digital_light_gpio = 27
 GPIO.setup(pir_gpio, GPIO.IN)
 GPIO.setup(digital_light_gpio, GPIO.IN)
+
+### BH1750 I2C Light Sensor Variables
+# These variables include the adresses and various light intesnity thresholds
+# Addresses
+# BH1750_ADDR - the adress used by the sensor on the i2c bus
+BH1750_ADDR = "0x23"
+CONTINUOUS_HIGH_RESOLUTION_MODE = "0x10"
+# Light Intensity Thresholds
+# ARTIFICIAL_LIGHT_THRESHOLD - the average light intensity of artificial light
+# EVENING_DAYLIGHT - the average light intensity of evening daylight
+ARTIFICIAL_LIGHT_THRESHOLD = 168.0
+EVENING_DAYLIGHT_ = 3.4
 
 class lightState():
     lightStates = ["OnFromPIR", "OffFromPIR", "OnFromElse", "OffFromElse"]
@@ -94,6 +107,18 @@ def checkDLightSensor():
         print("Digital Light Sensor: Light Detected")
     return
 
+# BH1750 Light Intensity Sensor
+def checkBH1750(bus):
+    data = bus.read_i2c_block_data(BH1750_ADDR, CONTINUOUS_HIGH_RESOLUTION_MODE)
+    light_intensity = (data[1] + (256 * data[0])) / 1.2
+    print("Light_Intensity: " + light_intensity)
+    return light_intensity
+
+# General Sensors
+def checkSensors(bus):
+    checkBH1750(bus)
+    readPIRSensor()
+
 # Energy Stream
 def getEnergyStream(energyStream):
     if energyStream == None:
@@ -126,6 +151,7 @@ def main():
     light2x26pl_c_concord = lightingEstimate("2 x 26w pl-c concord round recessed fittings", 26)
     light2x26Marlin = lightingEstimate("2 x 26w Marlin round surface bulkhead", 26)
     stateOfLights = lightState("OffFromElse")
+    bus = smbus.SMBus(1)
 
     # Check if using readings or estimates
     if usingDirectReadings:
