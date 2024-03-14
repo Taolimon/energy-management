@@ -23,9 +23,13 @@ BH1750_ADDR = 0x23
 CONTINUOUS_HIGH_RESOLUTION_MODE = 0x10
 # Light Intensity Thresholds
 # ARTIFICIAL_LIGHT_THRESHOLD - the average light intensity of artificial light
-# EVENING_DAYLIGHT - the average light intensity of evening daylight
+# The average light intensity of daylight in the evenings, early afternoon, late_afternoon, morning and nights
 ARTIFICIAL_LIGHT_THRESHOLD = 150.0
 EVENING_DAYLIGHT_ = 3.4
+LATE_AFTERNOON_DAYLIGHT = 3.4
+EARLY_AFTERNOON_DAYLIGHT = 20.0
+MORNING_DAYLIGHT = 25.0
+NIGHT = 0.0
 
 class lightState():
     lightStates = ["OnFromPIR", "OffFromPIR", "OnFromElse", "OffFromElse"]
@@ -60,14 +64,14 @@ class readingsList():
     def addReading(self, reading):
         self.sensorReadings.append(reading)
 
-def changeLightState(lstate, pir_r, light_r):
+def changeLightState(lstate, pir_r, light_r, threshold):
     if (pir_r == False):
         return False
     elif (light_r >= ARTIFICIAL_LIGHT_THRESHOLD):
         lstate.changeState("OnFromElse")
         return False
     else:
-        if (light_r >= EVENING_DAYLIGHT_):
+        if (light_r >= threshold):
             if (lstate.getState() == "OffFromElse" or lstate.getState() == "OffFromPIR"):
                 lstate.changeState("OnFromPIR")
                 return True
@@ -166,6 +170,22 @@ def storeReading(energyReading):
         writer.writerow(sensorReadingFormat)
         writer.writerow([newReading.date, newReading.time, newReading.name, newReading.value])
 
+def checkCurrentTime():
+    current_hour = time.strftime("%H")
+    current_hour = int(current_hour)
+    daylight_hour = None
+    if (current_hour >= 6 and current_hour < 12 ):
+        daylight_hour = MORNING_DAYLIGHT
+    elif (current_hour >= 12 and current_hour < 15):
+        daylight_hour = EARLY_AFTERNOON_DAYLIGHT
+    elif (current_hour >= 15 and current_hour < 18):
+        daylight_hour = LATE_AFTERNOON_DAYLIGHT
+    elif (current_hour >= 18 and current_hour < 21):
+        daylight_hour = EVENING_DAYLIGHT_
+    else:
+        daylight_hour = NIGHT
+    return daylight_hour
+
 def main():
     # Variables
     ListOfReadings = []
@@ -174,6 +194,9 @@ def main():
     light2x26Marlin = lightingEstimate("2 x 26w Marlin round surface bulkhead", 26)
     bus = smbus.SMBus(1)
     bus.write_byte(BH1750_ADDR, CONTINUOUS_HIGH_RESOLUTION_MODE)
+
+    # check the current time to get the apropriate light threshold
+    light_threshold = checkCurrentTime()
 
     if (checkBH1750(bus) >= ARTIFICIAL_LIGHT_THRESHOLD):
         stateOfLights = lightState("OnFromElse")
@@ -195,7 +218,7 @@ def main():
         time.sleep(2)
         print("\n")
 
-        stateChangeStatus = changeLightState(stateOfLights, pir_reading, bh1750_reading)
+        stateChangeStatus = changeLightState(stateOfLights, pir_reading, bh1750_reading, light_threshold)
         print("Light State: ", stateOfLights.getState())
 
     # Store the readings in a file
