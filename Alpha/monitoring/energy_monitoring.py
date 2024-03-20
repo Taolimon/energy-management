@@ -206,12 +206,6 @@ def main():
     else:
         stateOfLights = lightState("OffFromElse")
 
-    # Check if using readings or estimates
-    if usingDirectReadings:
-        current_reading = getEnergyStream(energyStream)
-    else:
-        pass
-
     while True:
         pir_reading = readPIRSensor()
         bh1750_reading = checkBH1750(bus)
