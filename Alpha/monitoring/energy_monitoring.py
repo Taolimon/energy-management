@@ -1,9 +1,12 @@
+# Primitive automatic lights program
 import numbers
 import time
 import math
 import csv
 import RPi.GPIO as GPIO
 import smbus
+import threading
+import signal
 
 sensorReadingFormat = ["Date", "Time", "Name", "Value"]
 usingDirectReadings = False
