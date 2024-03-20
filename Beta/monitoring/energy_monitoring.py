@@ -192,6 +192,7 @@ def checkCurrentTime():
 def main():
     # Variables
     ListOfReadings = []
+    firstReading = True
     energyStream = 0 ### Find a way to get the energy stream
     light2x26pl_c_concord = lightingEstimate("2 x 26w pl-c concord round recessed fittings", 26)
     light2x26Marlin = lightingEstimate("2 x 26w Marlin round surface bulkhead", 26)
