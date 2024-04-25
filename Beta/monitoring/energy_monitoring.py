@@ -7,6 +7,7 @@ import RPi.GPIO as GPIO
 import smbus
 import threading
 import signal
+import matplotlib.pyplot as plt
 
 sensorReadingFormat = ["Date", "Time", "Name", "Value"]
 usingDirectReadings = False
@@ -34,6 +35,12 @@ EARLY_AFTERNOON_DAYLIGHT = 20.0
 MORNING_DAYLIGHT = 25.0
 NIGHT = 0.0
 
+# Create figure
+fig = plt.figure
+ax = fig.add_subplot(1, 1, 1)
+x_axis = []
+y_axis = []
+
 class lightState():
     lightStates = ["OnFromPIR", "OffFromPIR", "OnFromElse", "OffFromElse"]
 
@@ -47,9 +54,10 @@ class lightState():
         self.currentLightState = new_state
 
 class lightingEstimate():
-    def __init__(self, name, watts) -> None:
+    def __init__(self, name, watts, qty):
         self.name = name
         self.watts = watts
+        self.quantity = qty
 
 class sensorReading():
     def __init__(self, date, time, name, value) -> None:
@@ -106,8 +114,6 @@ def readPIRSensor():
                     detecting_time = time.time()
                 current_time = time.time()
                 time_difference = current_time - detecting_time
-                #print(current_time)
-                #print(detecting_time)
                 print("time passed since last detection: " + str(time_difference))
                 if (sensor_counter >= max_counter and time_difference <= max_time_difference):
                     print("sufficient motion detected.")
@@ -161,17 +167,21 @@ def getEnergyStream(energyStream):
     energy_average = energyStream
     return energy_average
 
-def storeReading(energyReading):
+def storeReading(lux_reading, light_spec):
     t = time.localtime()
-    current_time = time.strftime("%H:%M:%S",t)
-    current_date = time.strftime("%z %Y-%m-%d", t)
-    current_month = time.strftime("%M")
-    newReading = sensorReading(current_date, current_time, "current_reading", energyReading)
+    current_hour = time.strftime("%H",t)
 
-    with open(current_month + "/sensor_readings.csv", "w", newline='') as file:
+    with open("Beta\\user_interface\\graph\\graph_data.csv", "w", newline='') as file:
         writer = csv.writer(file)
-        writer.writerow(sensorReadingFormat)
-        writer.writerow([newReading.date, newReading.time, newReading.name, newReading.value])
+        writer.writerow([current_hour, lux_reading])
+
+def graphReading(lux):
+    t = time.localtime()
+    current_hour = time.strftime("%H",t)
+
+    x_axis.append(current_hour)
+    y_axis.append(lux)
+
 
 def checkCurrentTime():
     current_hour = time.strftime("%H")
@@ -194,10 +204,15 @@ def main():
     ListOfReadings = []
     firstReading = True
     energyStream = 0 ### Find a way to get the energy stream
-    light2x26pl_c_concord = lightingEstimate("2 x 26w pl-c concord round recessed fittings", 26)
-    light2x26Marlin = lightingEstimate("2 x 26w Marlin round surface bulkhead", 26)
+    light2x26pl_c_concord = lightingEstimate("2 x 26w pl-c concord round recessed fittings", 52, 20)
+    light2x26Marlin = lightingEstimate("2 x 26w Marlin round surface bulkhead", 52, 6)
     bus = smbus.SMBus(1)
     bus.write_byte(BH1750_ADDR, CONTINUOUS_HIGH_RESOLUTION_MODE)
+
+    ax.plot(x_axis, y_axis)
+    plt.title('Light Levels over Time (h)')
+    plt.ylabel('Light Levels (lux)')
+    plt.show
 
     # check the current time to get the apropriate light threshold
     light_threshold = checkCurrentTime()
@@ -216,11 +231,16 @@ def main():
         time.sleep(2)
         print("\n")
 
+        # Store the readings in a file
+        storeReading(light2x26pl_c_concord)
+
+        # Update the graph
+        graphReading(bh1750_reading)
+
         stateChangeStatus = changeLightState(stateOfLights, pir_reading, bh1750_reading, light_threshold)
         print("Light State: ", stateOfLights.getState())
 
-    # Store the readings in a file
-    #storeReading(current_reading)
+
     return
 
 main()

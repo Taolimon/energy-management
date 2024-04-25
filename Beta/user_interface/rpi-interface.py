@@ -34,14 +34,14 @@ class MainWindow(QMainWindow):
         layout.addWidget(NavigationToolbar(dynamic_canvas, self))
 
         # self._static_ax = static_canvas.figure.subplots()
-        x_axis = [0, 1]
-        y_axis = [0, 1]
+        self.x_axis = []
+        self.y_axis = []
         # self._static_ax.plot(x_axis, y_axis)
 
         
 
         self._dynamic_ax = dynamic_canvas.figure.subplots()
-        self._line, = self._dynamic_ax.plot(x_axis, y_axis)
+        self._line, = self._dynamic_ax.plot(self.x_axis, self.y_axis)
         self._timer = dynamic_canvas.new_timer(1000)
         self._timer.add_callback(self.animate)
         self._timer.start()
@@ -57,18 +57,18 @@ class MainWindow(QMainWindow):
     def animate(self):
         graph_data = open("Beta\\user_interface\\graph\\graph_data.csv", 'r').read()
         lines = graph_data.split('\n')
-        x_axis = []
-        y_axis = []
+        # x_axis = []
+        # y_axis = []
         for line in lines:
             if len(line) > 1:
                 measured_time, lux = line.split(',')
-                x_axis.append(float(measured_time))
-                y_axis.append(float(lux))
+                self.x_axis.append(float(measured_time))
+                self.y_axis.append(float(lux))
                 # print("MT " + str(float(measured_time)))
                 # print("LUX " + str(float(lux)))
 
-        print("LUX " + str(x_axis))
-        self._line.set_data(x_axis, y_axis)
+        print("LUX " + str(self.x_axis))
+        self._line.set_data(self.x_axis, self.y_axis)
         self._line.figure.canvas.draw()
 
         # t = np.linspace(0, 10, 101)
