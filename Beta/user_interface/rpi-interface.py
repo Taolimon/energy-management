@@ -1,61 +1,103 @@
 import sys
 import time
 import csv
-import matplotlib as mpl
+import numpy as np
+
+import matplotlib.pyplot  as plt
 import matplotlib.animation as animation
+from matplotlib.backends.backend_qtagg import (FigureCanvas, NavigationToolbar2QT as NavigationToolbar)
+from matplotlib.figure import Figure
+
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QPushButton, QWidget, QLabel, QToolBar
+    QApplication, QMainWindow, QPushButton, QWidget, QLabel, QToolBar, QVBoxLayout
 )
 
 class MainWindow(QMainWindow):
 
     # Graph variables
-    fig = mpl.figure()
-    ax1 = fig.add_subplot(1,1,1)
+    # fig = plt.figure()
+    # ax1 = fig.add_subplot(1,1,1)
 
     def __init__(self):
-        super(MainWindow, self).__init__()
+        super().__init__()
+        self._main = QWidget()
+        self.setCentralWidget(self._main)
+        layout = QVBoxLayout(self._main)
+
+        # static_canvas = FigureCanvas(Figure(figsize=(5,3)))
+        toolbar = QToolBar("Graph View")
+        # layout.addWidget(NavigationToolbar(static_canvas, self))
+
+        dynamic_canvas = FigureCanvas(Figure(figsize=(5, 3)))
+        layout.addWidget(dynamic_canvas)
+        layout.addWidget(NavigationToolbar(dynamic_canvas, self))
+
+        # self._static_ax = static_canvas.figure.subplots()
+        x_axis = [0, 1]
+        y_axis = [0, 1]
+        # self._static_ax.plot(x_axis, y_axis)
+
+        
+
+        self._dynamic_ax = dynamic_canvas.figure.subplots()
+        self._line, = self._dynamic_ax.plot(x_axis, y_axis)
+        self._timer = dynamic_canvas.new_timer(1000)
+        self._timer.add_callback(self.animate)
+        self._timer.start()
 
         self.setWindowTitle("Monitoring")
 
-        label = QLabel("Toggle Toolbar")
-        label.setAlignment(Qt.AlignCenter)
-
-        self.setCentralWidget(label)
-
-        toolbar = QToolBar("Graph View")
-        self.addToolBar(toolbar)
+        self.show()
 
 
     def onToolBarButtonClick(self, s):
         print("clicked", s)
 
-    def animate(self, i):
-        graph_data = open('graph/graph_data.csv', 'r').read()
+    def animate(self):
+        graph_data = open("Beta\\user_interface\\graph\\graph_data.csv", 'r').read()
         lines = graph_data.split('\n')
         x_axis = []
         y_axis = []
         for line in lines:
             if len(line) > 1:
-                measured_time, duration = line.split(',')
+                measured_time, lux = line.split(',')
                 x_axis.append(float(measured_time))
-                y_axis.appen(float(duration))
-        self.ax1.clear()
-        self.ax1.plot(x_axis, y_axis)
+                y_axis.append(float(lux))
+                # print("MT " + str(float(measured_time)))
+                # print("LUX " + str(float(lux)))
+
+        print("LUX " + str(x_axis))
+        self._line.set_data(x_axis, y_axis)
+        self._line.figure.canvas.draw()
+
+        # t = np.linspace(0, 10, 101)
+        # # Shift the sinusoid as a function of time.
+        # self._line.set_data(t, np.sin(t + time.time()))
+        # self._line.figure.canvas.draw()
         return
     
     # Animation variables
-    ani = animation.FuncAnimation(fig, animate, interval=1000)
-    mpl.show()
+    # ani = animation.FuncAnimation(fig, animate, interval=1000, cache_frame_data=False)
+    # plt.show()
 
 
-# Every qt program must have an app
-app = QApplication(sys.argv)
+if __name__ == "__main__":
+    # Every qt program must have an app
+    # Check if there is an instance already running
+    qapp = QApplication.instance()
+    if not qapp:
+        qapp = QApplication(sys.argv)
 
-# Adds a test button
-window = MainWindow()
-window.show()
 
-# Starts the event loop
-app.exec()
+    window = MainWindow()
+    window.show()
+    window.activateWindow()
+    window.raise_()
+
+    # Adds a test button
+    # window = MainWindow()
+    # window.show()
+
+    # Starts the event loop
+    qapp.exec()
